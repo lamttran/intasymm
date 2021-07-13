@@ -9,7 +9,7 @@ Before using, please install and attach the required RcppArmadillo functions fro
 - library(intasymmRcppArma)
 
 Do the same with the intasymm package:
-- install_github("lamttran/intasymm") 
+- install_github("lamttran/intasymm", subdir="pkg") 
 - library(intasymm)
 
 Please note both packages were both built under R-4.1.0 and users should update to this version of R.
@@ -34,7 +34,7 @@ Numerical output for estimation and prediction error is outputted as the log of 
 
 
 # Replicating the real data analysis in our paper
-The cancer real data analysis in our paper used data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. we therefore include a script to clean their data and to replicate the real data results of the paper.
+The cancer real data analysis in our paper used data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. We therefore include an RData file (entitled cancersets.RData) in the respository for ease of access that was used in our real data analysis.
 
 The script, entitled , assumes the user has already loaded that RData file into the global environment.
 
