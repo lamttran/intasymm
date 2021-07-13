@@ -3,10 +3,19 @@ Asymmetric Integration of External Datasets to Small Local Data
 
 This package accompanies the paper "A Cross-Validation Statistical Framework for Asymmetric Data Integration" by Lam Tran, Kevin He, and Hui Jiang.
 
-Before using, please install and attach the required RcppArmadillo functions from https://github.com/lamttran/intasymmRcppArma with install_github("lamttran/intasymmRcppArma") and  library(intasymmRcppArma). Please note that package and this one were both built under R-4.1.0 and users should update to this version of R.
+# Starting out
+Before using, please install and attach the required RcppArmadillo functions from https://github.com/lamttran/intasymmRcppArma with the following code (the devtools package is required):
+- install_github("lamttran/intasymmRcppArma") 
+- library(intasymmRcppArma)
+
+Do the same with the intasymm package:
+- install_github("lamttran/intasymm") 
+- library(intasymm)
+
+Please note both packages were both built under R-4.1.0 and users should update to this version of R.
 
 # Try it out with simulated data
-After installing and attaching the intasymm package, you can quickly run some simulated examples with the following code:
+After installing and attaching the intasymm package, some simulated examples can be quickly run with the following code:
 
 - Linear models with continuous data: linearsim <- run_simulation_linear()
 - Cox models with survival data: coxsim <- run_simulation_survival()
