@@ -38,4 +38,9 @@ The cancer real data analysis in our paper used data available at https://github
 
 The RData file contains data from 9 cancer types, each with 7 variables. The first two columns represent the survival time (in months) and the censoring vector (1 = death, 0 = censored) for the patients. The remaining 5 columns are expression data for genes (TMX3, RIBC1, LOC115581, HCCAT5, and LOC644151) chosen by first selecting the 50 most significant genes via univariate Cox models and then choosing the first 5 of these genes to enter a penalized Cox model via glmnet.
 
-To replicate the real data anlysis, we have also included an R script o 
+We have also included an R script to replicate the real data results. To do so, perform the following steps:
+- Attach the intasymmRcppArma and intasymm packages
+- Load the cancersets.RData file into the R global environment
+- Run the script realdatascript.R
+
+In the interest of time, this script runs through 1 iterate of 2-parameter integration (the paper used 50 as well as full optimization), but the script can be easily extended to fully replicate the results if desired. The raw output used to generate the real data figures are saved as RealDataOutput.xlsx
