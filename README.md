@@ -43,4 +43,4 @@ We have also included an R script to replicate the real data results. To do so, 
 - Load the cancersets.RData file into the R global environment
 - Run the script realdatascript.R
 
-In the interest of time, this script runs through 1 iterate of 2-parameter integration (the paper used 50 as well as full optimization), but the script can be easily extended to fully replicate the results if desired. The raw output used to generate the real data figures are saved as RealDataOutput.xlsx
+In the interest of time, this script runs through 1 iterate of 2-parameter integration (the paper used 50 iterations of both 2-parameter and full optimization), but the script can be easily extended to fully replicate the results if desired. The raw output used to generate the real data figures are saved as RealDataOutput.xlsx
