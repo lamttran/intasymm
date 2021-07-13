@@ -25,5 +25,7 @@ Numerical output for estimation and prediction error is outputted as the log of 
 
 
 # Replicating the real data analysis in our paper
-The cancer real data analysis in our paper used data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. we therefore include a script to clean their data and to partially replicate the real data results of the paper.
+The cancer real data analysis in our paper used data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. we therefore include a script to clean their data and to replicate the real data results of the paper.
+
+The script, entitled , assumes the user has already loaded that RData file into the global environment.
 
