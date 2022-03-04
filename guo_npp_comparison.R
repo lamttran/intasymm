@@ -112,10 +112,11 @@ time.df = data.frame(t(time.mat))
 colnames(time.df) = c("opt", "2par", "guo", "NPP", "naive", "zeros")
 time.df = gather(time.df, method, Time, opt:zeros, factor_key = T)
 
-ggplot(est.df, aes(x = method, y = EstError)) + geom_boxplot(fill = "green")
+ggplot(est.df, aes(x = method, y = EstError)) + geom_boxplot(fill = "#999999") +
+  ggtitle("Estimation Error Comparison") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
 
 ggplot(pred.df, aes(x = method, y = PredError)) + geom_boxplot(fill = "#999999") + 
-  ggtitle("External Correct Weight 0") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
+  ggtitle("Prediction Error Comparison") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
 
 ggplot(time.df, aes(x = method, y = Time)) + geom_boxplot(fill = "#999999") + 
   ggtitle("Integration Runtime") + theme(plot.title = element_text(hjust = 0.5)) + 
