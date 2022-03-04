@@ -32,6 +32,8 @@ Numerical output for estimation and prediction error is outputted as the log of 
 - A boxplot of the percentage reduction in prediction or estimation error (positive values indicating a reduction): 
   - boxplot(100 - 100/exp(linearsim$EstError)) or boxplot(100 - 100/exp(linearsim$PredError))
 
+# Compare with other methods
+Two prior methods for weighted data integration are likelihood data fusion, proposed by Guo et al., and the Bayesian power prior, proposed by Ibrahim et al. No R code for likelihood data fusion was available, so we have included their method in this package (likelihood_guo.R). The power prior is implemented in the package NPP. A comparison of our methods with these two other methods is included as the script guo_npp_comparison.R. 
 
 # A real data application
 Unfortunately, the SRTR kidney data used in our paper is private and only available after application. Here, we present an alternative real data application using pan-genomic cancer data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. We therefore include an RData file (entitled cancersets.RData) in the respository for ease of access that was used in our real data analysis.
