@@ -33,8 +33,8 @@ Numerical output for estimation and prediction error is outputted as the log of 
   - boxplot(100 - 100/exp(linearsim$EstError)) or boxplot(100 - 100/exp(linearsim$PredError))
 
 
-# Replicating the real data analysis in our paper
-The cancer real data analysis in our paper used data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. We therefore include an RData file (entitled cancersets.RData) in the respository for ease of access that was used in our real data analysis.
+# A real data application
+Unfortunately, the SRTR kidney data used in our paper is private and only available after application. Here, we present an alternative real data application using pan-genomic cancer data available at https://github.com/shuanggema/IntePanCancer, specifically their RData file data.Rdata. The process of linking the separate lists of genes, survival times, and censoring vectors via their paper's summary statistics is nontrivial. We therefore include an RData file (entitled cancersets.RData) in the respository for ease of access that was used in our real data analysis.
 
 The RData file contains data from 9 cancer types, each with 7 variables. The first two columns represent the survival time (in months) and the censoring vector (1 = death, 0 = censored) for the patients. The remaining 5 columns are expression data for genes (TMX3, RIBC1, LOC115581, HCCAT5, and LOC644151) chosen by first selecting the 50 most significant genes via univariate Cox models and then choosing the first 5 of these genes to enter a penalized Cox model via glmnet.
 
