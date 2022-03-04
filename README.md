@@ -5,11 +5,12 @@ This package accompanies the paper "A Cross-Validation Statistical Framework for
 
 # Starting out
 Before using, please install and attach the required RcppArmadillo functions from https://github.com/lamttran/intasymmRcppArma with the following code (the devtools package is required):
-- install_github("lamttran/intasymmRcppArma") 
+- Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS=TRUE)
+- install_github("lamttran/intasymmRcppArma", ref = "main") 
 - library(intasymmRcppArma)
 
 Do the same with the intasymm package:
-- install_github("lamttran/intasymm", subdir="pkg") 
+- install_github("lamttran/intasymm", subdir="pkg", ref = "main") 
 - library(intasymm)
 
 Please note both packages were both built under R-4.1.0 and users should update to this version of R.
