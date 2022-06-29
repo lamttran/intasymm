@@ -7,6 +7,250 @@ library(NPP)
 library(tidyr)
 library(dplyr)
 
+simulate_linear = function(K = 5, p = 5, n = c(500, rep(200, K - 1)), beta0 = rnorm(p, 0, 1), 
+                           K0 = 2, sigma.beta = 1, mu.x = 0, sigma.x = 1, sigma.y = 0.5, 
+                           numfrac = 0, correlated = F, localsize = 50,
+                           equalcor = F, val.noerror = F, heterosk = F, trace = F) {
+  
+  weights = rep(0, K - 1)
+  weights[sample(K - 1, K0)] = 1 #datasets that should be fully integrated
+  
+  w = sample(which(weights == 1), numfrac)
+  weights[w] = weights[w] * 0.8 #datasets that should be partially integrated
+  
+  sigma.beta = c(0, 1 - weights) * sigma.beta #variance of parameters, design matrix, and response
+  mu.x = rep(1, K) * mu.x
+  sigma.x = rep(1, K) * sigma.x
+  sigma.y = rep(1, K) * sigma.y
+  
+  if(equalcor == T){ #correlation matrix if design matrix has same cor for all datasets
+    orthosandwich = matrix(rnorm(p ^ 2), p)
+    varcovmat = cov2cor(t(orthosandwich) %*% orthosandwich)
+  }
+  
+  beta = list()
+  datasets = list()
+  
+  for (i in 1:K) {#looping over datasets
+    
+    beta[[i]] = beta0 + rnorm(p, 0, 1) * sigma.beta[i]
+    
+    if(correlated == F){
+      
+      x = matrix(rnorm(n[i] * length(beta[[i]])), ncol=length(beta[[i]]))
+      
+    } else if(correlated == T & equalcor == T){ ##X columns are correlated, same cor in local and external datasets
+      
+      x = mvrnorm(n[i], rep(0, p), varcovmat)
+      
+    } else { ##X columns are correlated, different cor in local and external datasets
+      
+      orthosandwich = matrix(rnorm(p ^ 2), p)
+      varcovmat = cov2cor(t(orthosandwich) %*% orthosandwich)
+      x = mvrnorm(n[i], rep(0, p), varcovmat)
+      
+    }
+    if(heterosk == F){
+      y = x %*% beta[[i]] + rnorm(n[i], 0, 1) * sigma.y[i]
+    } else{
+      y = x %*% beta[[i]] + rnorm(n[i], 0, 0.5 + 1/(1 + exp(-rowSums(x)))) * sigma.y[i]
+    }
+    datasets[[i]] = list(x = x, y = y)
+    
+  }
+  
+  trainrows = sample(1:n[1], localsize, replace = F) #dividing into "local" data and validation dataset
+  if(val.noerror == T){
+    validationset = list(x = datasets[[1]]$x[-trainrows,], 
+                         y = datasets[[1]]$x[-trainrows,] %*% beta0)
+  } else if (val.noerror == F){
+    validationset = list(x = datasets[[1]]$x[-trainrows,], y = datasets[[1]]$y[-trainrows])
+  }
+  datasets[[1]] = list(x = datasets[[1]]$x[trainrows,], y = datasets[[1]]$y[trainrows,])
+  
+  return(list(weights = weights, datasets = datasets, par = beta0, validationset = validationset))
+  
+}
+
+precompute_linear = function(datasets, trace = F) {
+  
+  K = length(datasets)
+  precomputed.data = list()
+  
+  for (i in 1:K) {
+    precomputed.data[[i]] = list(xtx = t(datasets[[i]]$x) %*% datasets[[i]]$x, 
+                                 xty = t(datasets[[i]]$x) %*% datasets[[i]]$y)
+  }
+  
+  return(precomputed.data)
+  
+}
+
+fit_weighted_linear = function(weights, datasets, precomputed.data = NULL, trace = F) {
+  
+  if (is.null(precomputed.data)){
+    precomputed.data = precompute_linear(datasets)
+  }
+  
+  xtx = precomputed.data[[1]]$xtx
+  xty = precomputed.data[[1]]$xty
+  
+  for (i in 2:length(precomputed.data)) {#weighted sum of x'x, x'y
+    xtx = xtx + weights[i-1] * precomputed.data[[i]]$xtx
+    xty = xty + weights[i-1] * precomputed.data[[i]]$xty
+  }
+  
+  beta = as.numeric(solve(xtx, xty)) #beta = (x'x)^-1x'y
+  return(beta)
+}
+
+test_coefs_linear = function(datasets, trace = F) {
+  
+  K = length(datasets)
+  p.values = rep(1, K - 1)
+  for (i in 1:(K - 1)) {
+    
+    n1 = length(datasets[[1]]$y)
+    ni = length(datasets[[i + 1]]$y)
+    p = ncol(datasets[[1]]$x)
+    
+    y1 = c(datasets[[1]]$y, datasets[[i + 1]]$y) #stacked reduced model
+    x1 = rbind(datasets[[1]]$x, datasets[[i + 1]]$x)
+    
+    lm1 = lm(y1 ~ 0 + x1)
+    logLik1 = logLik(lm1)
+    
+    y2 = c(datasets[[1]]$y, datasets[[i + 1]]$y) #block diagonal full model
+    x2 = rbind(cbind(datasets[[1]]$x, matrix(0, n1, p)), cbind(matrix(0, ni, p), datasets[[i + 1]]$x))
+    lm2 = lm(y2 ~ 0 + x2)
+    logLik2 = logLik(lm2)
+    
+    LR = 2 * (logLik2 - logLik1) #deviance estimator
+    p.values[i] = pchisq(LR, df = p, lower.tail = F)
+    
+  }
+  
+  return(list(p.values = p.values))
+  
+}
+
+loocv_weighted_linear = function(weights, datasets, precomputed.data = NULL) {
+  
+  if (is.null(precomputed.data)){
+    precomputed.data = precompute_linear(datasets)
+  }
+  
+  x = datasets[[1]]$x
+  xtx = precomputed.data[[1]]$xtx
+  xty = precomputed.data[[1]]$xty
+  
+  for (i in 2:length(precomputed.data)) {#weighted sum of x'x, x'y
+    xtx = xtx + weights[i-1] * precomputed.data[[i]]$xtx
+    xty = xty + weights[i-1] * precomputed.data[[i]]$xty
+  }
+  
+  beta = solve(xtx, xty)
+  hat = x %*% solve(xtx) %*% t(x)
+  yhat = x %*% beta
+  loocv = mean(((datasets[[1]]$y - yhat) / (1 - diag(hat)))^2) #calculate PRESS statistic
+  
+  return(loocv) #Note this statistic should be minimized
+}
+
+loocv_weighted_2param = function(alphabeta, datasets, precomputed.data = NULL){
+  
+  if (is.null(precomputed.data)){
+    precomputed.data = precompute_linear(datasets)
+  }
+  
+  weights = rep(0, length(datasets) - 1)
+  pvals = unlist(test_coefs_linear(datasets)$p.values)
+  
+  for(i in 1:length(weights)){#convert lrt p values to weights
+    weights[i] = ifelse(pvals[i] < alphabeta[1], 0,
+                        ifelse(pvals[i] > alphabeta[2], 1, 
+                               (pvals[i] - alphabeta[1])/ (alphabeta[2] - alphabeta[1])))
+  }
+  
+  x = datasets[[1]]$x
+  xtx = precomputed.data[[1]]$xtx
+  xty = precomputed.data[[1]]$xty
+  
+  for (i in 2:length(precomputed.data)) {
+    xtx = xtx + weights[i-1] * precomputed.data[[i]]$xtx
+    xty = xty + weights[i-1] * precomputed.data[[i]]$xty
+  }
+  
+  beta = solve(xtx, xty)
+  hat = x %*% solve(xtx) %*% t(x)
+  yhat = x %*% beta
+  loocv = mean(((datasets[[1]]$y - yhat) / (1-diag(hat)))^2)
+  return(loocv)
+  
+}
+
+joint_fitting_linear = function(datasets, fit.weighted = fit_weighted_linear, 
+                                loocv.weighted = loocv_weighted_linear, precompute = precompute_linear, 
+                                test.coefs = test_coefs_linear, method = c("opt", "testingopt"), trace = F) {
+  
+  K = length(datasets)
+  precomputed.data = precompute(datasets)
+  best.weights = rep(0, K-1)
+  best.loocv = loocv.weighted(best.weights, datasets, precomputed.data)
+  
+  if (method == "opt") {#full optimization
+    
+    opt = optim(par = rep(0.5, K-1), fn = loocv.weighted, datasets = datasets, 
+                precomputed.data = precomputed.data, method = "L-BFGS-B", 
+                lower = rep(0, K-1), upper = rep(1, K-1))
+    
+    best.weights = opt$par #set weights and LOOCV as output of optim
+    best.loocv = opt$value
+    
+  } else if (method == "testingopt") {#2 parameter optimization
+    
+    loocvpval = loocv.weighted(as.numeric(test.coefs(datasets)$p.values), 
+                               datasets)
+    
+    loocvbin = loocv.weighted(as.numeric(test.coefs(datasets)$p.values > 0.05), 
+                              datasets)
+    
+    #set the optimization starting point as the better of identity or binary weighting
+    #find the 2 parameters as cutoffs for p-value -> weight function
+    
+    if(loocvpval < loocvbin){ ##i.e. pval is better = pval has lower loocv error
+      
+      testingopt = optim(par = c(0, 1), fn = loocv_weighted_2param, datasets = datasets, 
+                         method = "L-BFGS-B", lower = c(0, 0), upper = c(1, 1))$par
+    } else {
+      
+      testingopt = optim(par = c(0.05, 0.05), fn = loocv_weighted_2param, datasets = datasets, 
+                         method = "L-BFGS-B", lower = c(0, 0), upper = c(1, 1))$par
+    }
+    
+    pvals = unlist(test.coefs(datasets)$p.values)
+    
+    for(i in 1:(length(best.weights))){#converting p-values to weights
+      
+      best.weights[i] = ifelse(pvals[i] < testingopt[1], 0,
+                               ifelse(pvals[i] > testingopt[2], 1, (pvals[i] - testingopt[1])/
+                                        (testingopt[2] - testingopt[1])))
+      
+    }
+    
+    best.loocv = loocv.weighted(best.weights, datasets)
+  }
+  
+  if (trace) {
+    print(method)
+    print("best.weights")
+    print(best.weights)
+  }
+  
+  return (list(weights = best.weights, par = fit.weighted(best.weights, datasets, precomputed.data), 
+               par.localonly = fit.weighted(rep(0, K-1), datasets, precomputed.data), loocv = best.loocv))
+}
+
 set.seed(2022)
 
 #we used 500 replicates in our paper, for brevity, this example uses 50
@@ -40,13 +284,13 @@ for(i in 1:m){
   #full optimization
   ptm = proc.time()
   fit = joint_fitting_linear(datasets, fit_weighted_linear, loocv_weighted_linear, precompute_linear, 
-                      test.coefs = test_coefs_linear, method = "opt")
+                             test.coefs = test_coefs_linear, method = "opt")
   time.mat[1, i] = (proc.time() - ptm)[3]
   
   #2-par optimization
   ptm = proc.time()
   fit1 = joint_fitting_linear(datasets, fit_weighted_linear, loocv_weighted_linear, precompute_linear, 
-                       test.coefs = test_coefs_linear, method = "testingopt")
+                              test.coefs = test_coefs_linear, method = "testingopt")
   time.mat[2, i] = (proc.time() - ptm)[3]
   
   #Guo's likelihood method
